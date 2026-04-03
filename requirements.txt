@@ -1,0 +1,6 @@
+# requirements.txt — Dependencias del simulador
+# Instalar con: pip install -r requirements.txt
+
+requests>=2.31.0   # llamadas HTTP a Open-Meteo
+numpy>=1.26.0      # ruido gaussiano y clipping
+redis>=5.0.0       # cliente Redis para Python
