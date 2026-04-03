@@ -30,8 +30,6 @@ source .venv/bin/activate        # Windows: .venv\Scripts\activate
 # 2. Instalar dependencias (solo 3)
 pip install -r requirements.txt
 
-# 3. Levantar Redis
-docker run -d -p 6379:6379 --name redis-agro redis:7
 ```
 
 ---
