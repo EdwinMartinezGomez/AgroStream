@@ -14,7 +14,7 @@ from datetime import datetime, timezone
 import numpy as np
 
 from config import FINCAS, RANGOS_VALIDOS, RUIDO, SENSORES_POR_FINCA
-from openmeteo_client import (
+from services.openmeteo_client import (
     co2_para_hora,
     humedad_suelo_desde_raw,
     obtener_datos,

@@ -13,7 +13,7 @@ from collections import defaultdict
 
 import redis
 
-from alert_engine import evaluar_lectura
+from services.alert_engine import evaluar_lectura
 from config import (
     RANGOS_VALIDOS, REDIS_DB, REDIS_HOST, REDIS_PORT, REDIS_TTL,
 )

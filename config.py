@@ -96,3 +96,8 @@ RANGOS_VALIDOS = {
     "humedad_suelo": (  0, 100),
     "radiacion":     (  0, 1_400),
 }
+
+# ── Backend Flask ────────────────────────────────────────────────────────────
+FLASK_HOST = "0.0.0.0"
+FLASK_PORT = 5000
+FLASK_DEBUG = False
