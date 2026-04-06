@@ -1,45 +1,26 @@
-# alert_engine.py — Motor de detección de condiciones críticas
-#
-# Evalúa cada lectura contra los umbrales de config.py y construye
-# el diccionario de alerta que será persistido en Redis.
-
 import logging
 from datetime import datetime, timezone
-
 from config import UMBRALES
-
 logger = logging.getLogger(__name__)
-
-
 def evaluar_lectura(lectura: dict) -> list[dict]:
-    """
-    Recibe un diccionario de lectura y devuelve una lista de alertas
-    generadas. La lista está vacía si el valor está dentro del rango normal.
-    """
     tipo    = lectura["tipo"]
     valor   = lectura["valor"]
     alertas = []
     reglas  = UMBRALES.get(tipo, {})
-
     if "critico_alto" in reglas and valor > reglas["critico_alto"]:
         alertas.append(_construir(lectura, "critico",
             f"{_nombre(tipo)} excesivamente alta: "
             f"{valor} {lectura['unidad']} "
             f"(umbral: {reglas['critico_alto']} {lectura['unidad']})"))
-
     if "critico_bajo" in reglas and valor < reglas["critico_bajo"]:
         alertas.append(_construir(lectura, "critico",
             f"{_nombre(tipo)} peligrosamente baja: "
             f"{valor} {lectura['unidad']} "
             f"(umbral: {reglas['critico_bajo']} {lectura['unidad']})"))
-
     for a in alertas:
         logger.warning("🚨  [%s] %s — %s",
                        a["nivel"].upper(), a["finca_nombre"], a["mensaje"])
-
     return alertas
-
-
 def _construir(lectura: dict, nivel: str, mensaje: str) -> dict:
     ts = datetime.now(tz=timezone.utc).isoformat()
     return {
@@ -54,8 +35,6 @@ def _construir(lectura: dict, nivel: str, mensaje: str) -> dict:
         "unidad":       lectura["unidad"],
         "timestamp":    ts,
     }
-
-
 def _nombre(tipo: str) -> str:
     return {
         "temperatura":   "Temperatura",
