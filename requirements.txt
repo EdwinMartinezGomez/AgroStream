@@ -5,3 +5,4 @@ requests>=2.31.0   # llamadas HTTP a Open-Meteo
 numpy>=1.26.0      # ruido gaussiano y clipping
 redis>=5.0.0       # cliente Redis para Python
 Flask>=3.0.0       # API REST para CRUD de fincas
+Flask-SocketIO>=5.4.1  # WebSocket para lecturas y alertas en tiempo real

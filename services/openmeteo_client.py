@@ -85,6 +85,12 @@ def obtener_datos(lat: float, lon: float, altitud_m: float = 2600) -> dict:
         with ruta.open() as f:
             cached = json.load(f)
         if cached.get("_mode") != "fallback":
+            logger.info(
+                "🛰️  Open-Meteo cache mode=%s | horas=%d | current=%s",
+                cached.get("_mode", "desconocido"),
+                max(0, len(cached) - 2),
+                bool(cached.get("_current")),
+            )
             return cached
     try:
         logger.info("🌐  Descargando datos Open-Meteo para lat=%.2f lon=%.2f …", lat, lon)
@@ -93,11 +99,21 @@ def obtener_datos(lat: float, lon: float, altitud_m: float = 2600) -> dict:
         data["_mode"] = "openmeteo"
         with ruta.open("w") as f:
             json.dump(data, f)
+        logger.info(
+            "🛰️  Open-Meteo respuesta recibida | horas=%d | current=%s",
+            max(0, len(data) - 2),
+            bool(data.get("_current")),
+        )
         logger.info("✅  Open-Meteo: %d horas descargadas.", len(data) - 2)
         return data
     except Exception as exc:
         logger.warning("⚠️  Open-Meteo no disponible (%s). Usando modelo físico local.", exc)
-    logger.info("🔧  Modo fallback activo — generando valores con modelo físico.")
+    logger.info(
+        "🔧  Modo fallback activo — generando valores con modelo físico para lat=%.2f lon=%.2f alt=%.1f.",
+        lat,
+        lon,
+        altitud_m,
+    )
     data = {"_mode": "fallback"}
     for h in range(24):
         key = f"{h:02d}:00"
@@ -106,6 +122,7 @@ def obtener_datos(lat: float, lon: float, altitud_m: float = 2600) -> dict:
     data["_current"] = _fallback_hora(lat, altitud_m, float(hora_actual))
     with ruta.open("w") as f:
         json.dump(data, f)
+    logger.info("🛰️  Open-Meteo fallback listo | horas=%d", max(0, len(data) - 2))
     return data
 def valor_para_ahora(datos: dict, altitud_m: float = 2600) -> dict:
     current = datos.get("_current", {})

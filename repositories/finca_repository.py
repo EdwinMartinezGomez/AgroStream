@@ -68,6 +68,47 @@ class FincaRepository:
         }
         self._guardar(finca)
         return finca
+
+    def sembrar_fincas_iniciales(self, fincas: list[dict]) -> int:
+        """
+        Carga las fincas base de configuración solo si Redis no tiene fincas.
+        Conserva el ID que venga en cada finca para que los sensores usen el mismo identificador.
+        """
+        if self.listar():
+            return 0
+
+        sembradas = 0
+        ahora = datetime.now(tz=timezone.utc).isoformat()
+        for finca in fincas:
+            finca_id = finca.get("id")
+            nombre = finca.get("nombre")
+            lat = finca.get("lat")
+            lon = finca.get("lon")
+            altitud_m = finca.get("altitud_m")
+
+            if not finca_id or not nombre:
+                continue
+
+            payload = {
+                "id": finca_id,
+                "nombre": nombre,
+                "lat": float(lat),
+                "lon": float(lon),
+                "altitud_m": float(altitud_m),
+                "created_at": finca.get("created_at", ahora),
+                "updated_at": finca.get("updated_at", ahora),
+            }
+
+            if self.obtener(finca_id):
+                continue
+
+            self._guardar(payload)
+            sembradas += 1
+
+        if sembradas:
+            logger.info("Fincas iniciales sembradas en Redis: %d", sembradas)
+
+        return sembradas
     def actualizar(
         self,
         finca_id: str,

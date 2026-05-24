@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from repositories.finca_repository import FincaRepository
+from services.geocoding_client import obtener_ubicacion
 
 
 class FincaValidationError(ValueError):
@@ -76,6 +77,7 @@ class FincaService:
         sensores = self._repo.obtener_sensores_estado(finca_id)
         return {
             **finca,
+            "ubicacion_geografica": obtener_ubicacion(finca["lat"], finca["lon"]),
             "lecturas": {
                 "ultima_por_tipo": self._repo.obtener_ultima_por_tipo(finca_id),
                 "sensores": sensores,

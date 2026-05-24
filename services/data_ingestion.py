@@ -6,14 +6,10 @@ from collections import defaultdict
 import redis
 from services.alert_engine import evaluar_lectura
 from config import (
-    RANGOS_VALIDOS, REDIS_DB, REDIS_HOST, REDIS_PORT, REDIS_TTL,
+    RANGOS_VALIDOS, REDIS_DB, REDIS_HOST, REDIS_PASSWORD, REDIS_PORT,
+    REDIS_TTL, REDIS_URL, REDIS_USERNAME,
 )
 logger = logging.getLogger(__name__)
-
-LEGACY_REDIS_HOST = "redis-16643.c84.us-east-1-2.ec2.cloud.redislabs.com"
-LEGACY_REDIS_PORT = 16643
-LEGACY_REDIS_USER = "default"
-LEGACY_REDIS_PASSWORD = "ld3UCP9yKFczLp8UdkrzZGqA4d7N9HjI"
 
 
 def _crear_cliente_redis(
@@ -34,44 +30,37 @@ def _crear_cliente_redis(
 
 
 def conectar_redis() -> redis.Redis:
-    redis_user = os.getenv("REDIS_USER")
-    redis_password = os.getenv("REDIS_PASSWORD")
+    if REDIS_URL:
+        cliente = redis.Redis.from_url(REDIS_URL, decode_responses=True)
+        try:
+            cliente.ping()
+            logger.info("✅  Redis conectado vía REDIS_URL")
+            return cliente
+        except redis.ConnectionError as exc:
+            raise RuntimeError(
+                "No se pudo conectar a Redis usando REDIS_URL. Revisa que el host, puerto y credenciales sean correctos."
+            ) from exc
 
     cliente = _crear_cliente_redis(
         host=REDIS_HOST,
         port=REDIS_PORT,
         db=REDIS_DB,
-        username=redis_user,
-        password=redis_password,
+        username=REDIS_USERNAME,
+        password=REDIS_PASSWORD,
     )
     try:
         cliente.ping()
-        logger.info("✅  Redis conectado en %s:%d (db=%d)",
-                    REDIS_HOST, REDIS_PORT, REDIS_DB)
+        logger.info(
+            "✅  Redis conectado en %s:%d (db=%d)",
+            REDIS_HOST,
+            REDIS_PORT,
+            REDIS_DB,
+        )
         return cliente
     except redis.ConnectionError as exc:
-        logger.warning("No se pudo conectar a Redis configurado (%s:%d): %s",
-                       REDIS_HOST, REDIS_PORT, exc)
-
-    cliente_legacy = _crear_cliente_redis(
-        host=LEGACY_REDIS_HOST,
-        port=LEGACY_REDIS_PORT,
-        db=REDIS_DB,
-        username=LEGACY_REDIS_USER,
-        password=LEGACY_REDIS_PASSWORD,
-    )
-    try:
-        cliente_legacy.ping()
-        logger.warning(
-            "⚠️  Usando Redis legacy remoto en %s:%d porque el Redis configurado no está disponible.",
-            LEGACY_REDIS_HOST,
-            LEGACY_REDIS_PORT,
-        )
-        return cliente_legacy
-    except redis.ConnectionError as exc:
         raise RuntimeError(
-            f"No se pudo conectar a Redis en {REDIS_HOST}:{REDIS_PORT} ni al fallback legacy {LEGACY_REDIS_HOST}:{LEGACY_REDIS_PORT}. "
-            "Si quieres usar local: docker run -d -p 6379:6379 redis:7"
+            f"No se pudo conectar a Redis en {REDIS_HOST}:{REDIS_PORT}. "
+            "Si tu Redis es en la nube, define REDIS_URL o REDIS_HOST/REDIS_PORT/REDIS_USERNAME/REDIS_PASSWORD."
         ) from exc
 class ErrorValidacion(ValueError):
     pass
@@ -124,8 +113,11 @@ class ServicioIngesta:
         self._contadores[lectura["tipo"]] += 1
         alertas = evaluar_lectura(lectura)
         if alertas:
-            self._persistir_alertas(alertas, fid)
+            self.persistir_alertas(alertas, fid)
         return alertas
+
+    def persistir_alertas(self, alertas: list[dict], finca_id: str) -> None:
+        self._persistir_alertas(alertas, finca_id)
     def _persistir_alertas(self, alertas: list[dict], finca_id: str) -> None:
         pipe = self.r.pipeline()
         for alerta in alertas:

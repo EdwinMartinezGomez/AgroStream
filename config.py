@@ -1,3 +1,6 @@
+import os
+
+
 FINCAS = [
     {
         "id":        "finca_001",
@@ -22,6 +25,7 @@ FINCAS = [
     },
 ]
 OPENMETEO_URL = "https://api.open-meteo.com/v1/forecast"
+GEOCODING_URL = "https://geocoding-api.open-meteo.com/v1/reverse"
 OPENMETEO_VARS = (
     "temperature_2m,"
     "relative_humidity_2m,"
@@ -31,11 +35,15 @@ OPENMETEO_VARS = (
 )
 OPENMETEO_DIAS = 1
 OPENMETEO_TZ = "America/Bogota"
-REDIS_HOST = "localhost"
-REDIS_PORT = 6379
-REDIS_DB   = 0
+REDIS_URL = os.getenv("REDIS_URL")
+REDIS_HOST = os.getenv("REDIS_HOST", "dinosaurs-tiger-nonstick-54174.db.redis.io")
+REDIS_PORT = int(os.getenv("REDIS_PORT", "17678"))
+REDIS_DB   = int(os.getenv("REDIS_DB", "0"))
+REDIS_USERNAME = os.getenv("REDIS_USERNAME", "default")
+REDIS_PASSWORD = os.getenv("REDIS_PASSWORD", "RCHBm1Nzd6uSc0lGlZ1w6ST0PNvohXBA")
 REDIS_TTL  = 86_400
 INTERVALO_LECTURA_S = 5
+PROB_ALERTA_SIMULADA = float(os.getenv("PROB_ALERTA_SIMULADA", "0.03"))
 SENSORES_POR_FINCA = {
     "temperatura":   2,
     "humedad":       2,

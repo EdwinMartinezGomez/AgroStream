@@ -1,7 +1,12 @@
 from __future__ import annotations
 
-from flask import Blueprint, jsonify, request
+from flask import Blueprint, current_app, jsonify, request
 
+from api.realtime import (
+    broadcast_finca_deleted,
+    broadcast_finca_snapshot,
+    broadcast_fincas_snapshot,
+)
 from services.finca_service import (
     FincaNotFoundError,
     FincaService,
@@ -28,6 +33,9 @@ def create_fincas_blueprint(finca_service: FincaService) -> Blueprint:
         payload = request.get_json(silent=True) or {}
         try:
             finca = finca_service.crear_finca(payload)
+            socketio = current_app.config["socketio"]
+            broadcast_fincas_snapshot(socketio, finca_service)
+            broadcast_finca_snapshot(socketio, finca_service, finca["id"])
             return jsonify(finca), 201
         except FincaValidationError as exc:
             return jsonify({"error": str(exc)}), 400
@@ -38,6 +46,9 @@ def create_fincas_blueprint(finca_service: FincaService) -> Blueprint:
         payload = request.get_json(silent=True) or {}
         try:
             finca = finca_service.actualizar_finca(finca_id, payload)
+            socketio = current_app.config["socketio"]
+            broadcast_fincas_snapshot(socketio, finca_service)
+            broadcast_finca_snapshot(socketio, finca_service, finca_id)
             return jsonify(finca)
         except FincaValidationError as exc:
             return jsonify({"error": str(exc)}), 400
@@ -48,6 +59,9 @@ def create_fincas_blueprint(finca_service: FincaService) -> Blueprint:
     def eliminar_finca(finca_id: str):
         try:
             finca_service.eliminar_finca(finca_id)
+            socketio = current_app.config["socketio"]
+            broadcast_fincas_snapshot(socketio, finca_service)
+            broadcast_finca_deleted(socketio, finca_id)
             return "", 204
         except FincaNotFoundError as exc:
             return jsonify({"error": str(exc)}), 404
